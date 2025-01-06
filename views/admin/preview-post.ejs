@@ -1,0 +1,50 @@
+<!-- page qui affiche le post  -->
+<div class="mainPreview">
+  <div class="banner2">
+    <img
+      id="img-banner"
+      src="<%= data.bannerImage %>"
+      class="blog-image"
+      alt="<%= data.title %>"
+      width="800"
+      height="400"
+      loading="lazy"
+    />
+  </div>
+
+  <div class="back"></div>
+  <div class="blog">
+    <h1 class="title"><%= data.title %></h1>
+    <p class="published">
+      <span>published at - </span><%= data.createdAt.toDateString() %>
+    </p>
+    <div class="content"><%- data.sanitizedHtml %></div>
+  </div>
+
+  <!-- Preview Carte -->
+  <section class="articles">
+    <div class="blogs-section">
+      <div class="blog-card">
+        <div class="card-image-wrapper">
+          <img
+            id="img-card"
+            src="<%= data.bannerImage %>"
+            class="blog-image"
+            alt="<%= data.title %>"
+          />
+        </div>
+        <div class="card-content-wrapper">
+          <h1 class="card-title"><%= data.title %></h1>
+          <p class="card-text"><%= data.description %></p>
+          <a href="/blog/post/<%= data._id %>" class="btn dark">read</a>
+          <span class="card-article-list__date">
+            <%= data.createdAt.toDateString() %>
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+  <p>Post ID visible : <%= data._id %></p>
+
+  <button class="btn btn-close" onclick="window.history.back()">Close</button>
+</div>

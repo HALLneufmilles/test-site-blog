@@ -6,14 +6,41 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node server.js",
+    "blog-dev": "nodemon server.js",
+    "serve-dev": "concurrently \"npm run dev\" \"npm run blog-dev\"",
+    "prod": "npm run build && npm run start",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
+    "concurrently": "^9.1.2",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "nodemon": "^3.1.7",
     "vite": "^5.4.1",
     "vite-plugin-sitemap": "^0.7.1"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
-    "lazysizes": "^5.3.2"
+    "bcrypt": "^5.1.1",
+    "connect-mongo": "^5.1.0",
+    "cookie-parser": "^1.4.7",
+    "dompurify": "^3.2.3",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.21.1",
+    "express-ejs-layouts": "^2.5.1",
+    "express-fileupload": "^1.5.1",
+    "express-session": "^1.18.1",
+    "jsdom": "^25.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "lazysizes": "^5.3.2",
+    "markdown-it": "^14.1.0",
+    "markdown-it-emoji": "^3.0.0",
+    "marked": "^15.0.3",
+    "method-override": "^3.0.0",
+    "mongoose": "^8.8.0",
+    "sharp": "^0.33.5"
   }
 }
