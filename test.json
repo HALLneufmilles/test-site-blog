@@ -1,0 +1,12 @@
+{
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "node server.js",
+    "blog-dev": "nodemon server.js",
+    "serve-dev": "concurrently \"npm run dev\" \"npm run blog-dev\"",
+    "prod": "npm run build && npm run start",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}

@@ -17,15 +17,27 @@ import { fileURLToPath } from "url";
 import fs from "fs/promises";
 
 import { processImage } from "../helpers/imageProcessor.js";
+// dompurify pour nettoyer le HTML généréé par marked afin de supprimer tout contenu potentiellement dangereux (comme des balises <script> ou des événements JavaScript).
 import createDomPurify from "dompurify";
 import { JSDOM } from "jsdom";
+// marked transforme le Markdown en HTML
 import { marked } from "marked";
+import { renderMarkdown } from "../helpers/markdownRenderer.js"; // Importer le renderer
 import { deletePostImages } from "../helpers/imageDeleter.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const dompurify = createDomPurify(new JSDOM().window);
-
+dompurify.setConfig({
+  ADD_TAGS: ["iframe"],
+  ADD_ATTR: [
+    "allow",
+    "allowfullscreen",
+    "frameborder",
+    "src", // Autorise l'attribut src pour les iframes
+    "scrolling"
+  ]
+});
 // Le layout spécifique pour la fonction render()
 const adminLayout = "../views/layouts/admin.ejs";
 const jwtSecret = process.env.JWT_SECRET;
@@ -203,6 +215,42 @@ router.post("/add-post", authMiddleware, async (req, res) => {
 });
 
 /**
+ * POST  Admin - Prévisualiser un post en cours de création
+ **/
+
+router.post("/preview-addpost", authMiddleware, async (req, res) => {
+  try {
+    const locals = {
+      title: "Preview Post",
+      description: "Preview the post before adding."
+    };
+
+    const data = {
+      title: req.body.title,
+      description: req.body.description,
+      body: req.body.body,
+      bannerImage: req.files.bannerImage,
+      createdAt: new Date(),
+      // sanitizedHtml: dompurify.sanitize(marked.parse(req.body.body))
+      sanitizedHtml: dompurify.sanitize(renderMarkdown(req.body.body))
+    };
+    // console.log("Date de création (createdAt):", data.createdAt);
+    // console.log("Type de createdAt:", typeof data.createdAt);
+    // console.log("Valeur de createdAt:", data.createdAt);
+
+    // Rendre la vue de prévisualisation
+    res.render("admin/preview-post", {
+      locals,
+      data,
+      layout: adminLayout
+    });
+  } catch (error) {
+    console.error("Erreur lors de la prévisualisation du post :", error);
+    res.status(500).send("Erreur lors de la prévisualisation du post");
+  }
+});
+
+/**
  * GET  Admin - accéder au post à modifier
  **/
 // *
@@ -215,7 +263,7 @@ router.get("/edit-post/:id", authMiddleware, async (req, res) => {
     };
 
     const data = await Post.findOne({ _id: req.params.id });
-    console.log("data get edit-post / id :", data);
+    // console.log("data get edit-post / id :", data);
 
     // Récupérer tempBannerImage depuis la requête si disponible
     // const tempBannerImage = req.query.tempBannerImage || null;
@@ -300,6 +348,12 @@ https://chatgpt.com/share/673e1cd8-ea44-800d-b7e7-a84618775dac */
   }
 }); */
 
+/**
+ * PUT  Admin - Edit post
+ **/
+// *
+// Modifier un post existant :
+/* Part 10 du tuto, time 7.37 */
 router.put("/edit-post/:id", authMiddleware, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
@@ -397,7 +451,7 @@ router.post("/preview-post/:id", authMiddleware, async (req, res) => {
     // const post = await Post.findById(req.body.postId);
 
     const post = await Post.findById(req.params.id);
-    console.log("post :", post);
+    // console.log("post :", post);
 
     if (!post) {
       return res.status(404).send("Post introuvable");
@@ -410,14 +464,14 @@ router.post("/preview-post/:id", authMiddleware, async (req, res) => {
       body: req.body.body,
       bannerImage: post.bannerImages.ImgBase,
       createdAt: post.createdAt, // Conserver la date de création
-      sanitizedHtml: dompurify.sanitize(marked.parse(req.body.body))
+      sanitizedHtml: dompurify.sanitize(renderMarkdown(req.body.body))
     };
+    // console.log("data.bannerImage :", data.bannerImage);
 
     // Rendre la vue de prévisualisation
     res.render("admin/preview-post", {
       locals,
       data,
-
       layout: adminLayout
     });
   } catch (error) {
@@ -583,7 +637,7 @@ router.delete("/delete-post/:id", authMiddleware, async (req, res) => {
     await Post.deleteOne({ _id: req.params.id });
     res.redirect("/blog/dashboard");
   } catch (error) {
-    console.error("Erreur lors de la suppression du post :", error);
+    // console.error("Erreur lors de la suppression du post :", error);
     res.status(500).send("Erreur lors de la suppression du post");
   }
 });

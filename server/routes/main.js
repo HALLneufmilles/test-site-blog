@@ -22,7 +22,7 @@ router.get("/", async (req, res) => {
       description: "Simple Blog created with NodeJs, Express & MongoDb."
     };
     // On défini le nombre de post par page
-    let perPage = 3;
+    let perPage = 6;
     // la page par defaut est la page 1. Query représante une option après "?" dans l'url qu'on introduit sous fomre de clef = Valeur comme dans  <a href="/?page=<%= nextPage %>" dans 'index.ejs' .
     let page = req.query.page || 1;
     // https://chatgpt.com/share/672e0389-1c94-800d-b388-659e73d9334c
@@ -35,9 +35,10 @@ router.get("/", async (req, res) => {
 
     // Utilisez `find()` avec le tri
     const data = await Post.find({})
-      .sort({ createdAt: -1 }) // Trie les posts du plus récent au plus ancien
+      .sort({ createdAt: -1 })
       .skip(perPage * (page - 1))
       .limit(perPage);
+    // console.log("data find :", data);
 
     // https://chatgpt.com/share/672e0389-1c94-800d-b388-659e73d9334c
     // Count is deprecated - please use countDocuments

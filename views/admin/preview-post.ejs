@@ -1,6 +1,7 @@
 <!-- page qui affiche le post  -->
 <div class="mainPreview">
   <div class="banner2">
+    <!-- Si une nouvelle image est chargé dans 'edit-post.ejs' , 'editor.js' la charge dans sessionStorage et 'preview.js' la remplace dans src . -->
     <img
       id="img-banner"
       src="<%= data.bannerImage %>"
@@ -16,9 +17,10 @@
   <div class="blog">
     <h1 class="title"><%= data.title %></h1>
     <p class="published">
-      <span>published at - </span><%= data.createdAt.toDateString() %>
+      <span>published at - </span><%= data.createdAt ?
+      data.createdAt.toDateString() : 'Date invalide' %>
     </p>
-    <div class="content"><%- data.sanitizedHtml %></div>
+    <div class="markdown"><%- data.sanitizedHtml %></div>
   </div>
 
   <!-- Preview Carte -->
@@ -26,6 +28,7 @@
     <div class="blogs-section">
       <div class="blog-card">
         <div class="card-image-wrapper">
+          <!-- Si une nouvelle image est chargé dans 'edit-post.ejs' , 'editor.js' la charge dans sessionStorage et 'preview.js' la remplace dans src . -->
           <img
             id="img-card"
             src="<%= data.bannerImage %>"
@@ -36,15 +39,15 @@
         <div class="card-content-wrapper">
           <h1 class="card-title"><%= data.title %></h1>
           <p class="card-text"><%= data.description %></p>
-          <a href="/blog/post/<%= data._id %>" class="btn dark">read</a>
+          <a href="" class="btn dark">read</a>
           <span class="card-article-list__date">
-            <%= data.createdAt.toDateString() %>
+            <%= data.createdAt ? data.createdAt.toDateString() : 'Date invalide'
+            %>
           </span>
         </div>
       </div>
     </div>
   </section>
-  <p>Post ID visible : <%= data._id %></p>
 
   <button class="btn btn-close" onclick="window.history.back()">Close</button>
 </div>

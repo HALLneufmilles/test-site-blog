@@ -19,5 +19,9 @@ const UserSchema = new Schema({
   }
 });
 
+const db = mongoose.connection.useDb("MVDW-Blog2");
+
+export default db.model("User", UserSchema);
+
 // module.exports = mongoose.model("Post", PostSchema);
-export default mongoose.model("User", UserSchema);
+// export default mongoose.model("User", UserSchema);

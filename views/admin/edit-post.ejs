@@ -49,6 +49,9 @@
       <img src="/img/upload.png" alt="upload banner" />
     </label>
   </div>
+  <div class="old-img">
+    <img src="<%=data.bannerImages.ImgBase%>" alt="ancienne image" />
+  </div>
   <!-- prettier-ignore-end -->
   <input type="submit" value="Update" class="btn" />
   <!-- Bouton Preview -->
@@ -59,5 +62,6 @@
   >
     Preview
   </button>
-  <button class="btn btn-close" onclick="window.history.back()">Close</button>
+  <!-- <button class="btn btn-close" onclick="window.history.back()">Cancel</button> -->
+  <a href="/blog/dashboard" class="btn">Cancel</a>
 </form>

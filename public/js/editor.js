@@ -290,6 +290,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const bannerUpload = document.querySelector("#banner-upload");
   const savedImage = sessionStorage.getItem("tempBannerImage");
   console.log("Current tempBannerImage in sessionStorage:", savedImage);
+  const currentUrl = window.location.pathname;
+  console.log("currentUrl:", currentUrl);
 
   // Fonction pour restaurer une image sauvegardée
   const restoreSavedImage = () => {
@@ -336,22 +338,74 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Nettoyer sessionStorage après soumission réussie
+  // Gestionnaire de soumission pour éviter de nettoyer sessionStorage lors de la prévisualisation
   const form = document.querySelector("form");
   if (form) {
-    form.addEventListener("submit", () => {
+    form.addEventListener("submit", (event) => {
+      const previewButton = document.querySelector(".btn-preview");
+      if (event.submitter === previewButton) {
+        console.log(
+          "Preview button clicked, skipping sessionStorage cleanup..."
+        );
+        return; // Ne pas nettoyer `sessionStorage`
+      }
+
       console.log("Form submitted, clearing sessionStorage...");
       sessionStorage.removeItem("tempBannerImage");
     });
   }
 
-  // Nettoyer sessionStorage au chargement de la page si nécessaire
-  const currentUrl = window.location.pathname;
-  if (
-    currentUrl.includes("dashboard") ||
-    (currentUrl.includes("edit-post") && !savedImage)
-  ) {
-    console.log("Cleaning up sessionStorage as we are not editing anymore...");
-    sessionStorage.removeItem("tempBannerImage");
+  // Fonction pour nettoyer sessionStorage et l'image de la bannière
+  const cleanupBanner = () => {
+    if (savedImage) {
+      // Si une image est sauvegardée dans sessionStorage
+      console.log(
+        "Cleaning up sessionStorage as we're leaving the edit page..."
+      );
+      sessionStorage.removeItem("tempBannerImage");
+
+      // Supprimer l'image de la bannière si elle existe
+      if (bannerDiv) {
+        console.log("Clearing banner image from the DOM.");
+        bannerDiv.style.backgroundImage = ""; // Réinitialiser le fond
+      }
+    }
+  };
+
+  // Nettoyage au rafraîchissement de 'add-post.ejs'
+  // if (currentUrl.includes("add-post") && savedImage) {
+  //   console.log(
+  //     "Cleaning up sessionStorage and banner image on page refresh..."
+  //   );
+  //   cleanupBanner();
+  // }
+
+  if (currentUrl.includes("dashboard")) {
+    console.log(
+      "Cleaning up sessionStorage and banner image on page refresh..."
+    );
+    cleanupBanner();
   }
+  // Ajouter un écouteur pour 'beforeunload' pour nettoyer avant que l'utilisateur quitte 'add-post.ejs'
+  /*   window.addEventListener("beforeunload", () => {
+    if (currentUrl.includes("add-post")) {
+      console.log("Cleaning up sessionStorage before leaving add-post.ejs...");
+      cleanupBanner();
+    }
+  }); */
+
+  // Ajouter un écouteur pour 'pageshow' afin de gérer les pages restaurées depuis le cache
+  /*   window.addEventListener("pageshow", (event) => {
+    console.log("event ;", event);
+
+    // Vérifie si la page est restaurée depuis le cache
+    console.log("Page restored from cache, cleaning sessionStorage...");
+    cleanupBanner();
+  });
+ */
+  // Ajouter un écouteur pour 'popstate' afin de détecter la navigation en arrière
+  /*   window.addEventListener("popstate", () => {
+    console.log("Navigating with popstate, cleaning sessionStorage...");
+    cleanupBanner();
+  }); */
 });

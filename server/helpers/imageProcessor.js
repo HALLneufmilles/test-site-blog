@@ -65,7 +65,7 @@ export async function processImage(bannerFile) {
         quality: 80,
         compressionLevel: 9
       })
-      .toBuffer(); // Convertir en buffer pour libérer les ressources
+      .toBuffer(); // Convertir en buffer pour libérer l'image du système.
     await sharp(buffer).toFile(basePath); // Sauvegarder le fichier
   } else {
     const buffer = await sharp(bannerFile.data)

@@ -196,7 +196,7 @@ button > svg {
   color: var(--black);
   cursor: pointer;
   transition: all 0.3s;
-  /* margin-right: 2vw; */
+  margin-right: 10px;
   margin-left: 2vw;
 }
 
@@ -471,7 +471,9 @@ button > svg {
   display: inline-block;
   margin-right: 3rem;
   padding: 12px;
-  color: rgb(94, 94, 94);
+  /* color: rgb(94, 94, 94); */
+  color: rgb(0, 0, 0);
+  font-weight: 600;
   text-decoration: none;
   cursor: pointer;
   transition: color 0.3s ease-in-out;
@@ -479,7 +481,7 @@ button > svg {
 
 .read-more:hover,
 .read-less:hover {
-  color: rgb(0, 0, 0);
+  color: rgb(94, 94, 94);
   font-weight: 600;
 }
 

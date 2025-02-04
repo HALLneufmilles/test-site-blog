@@ -14,10 +14,23 @@
       rel="stylesheet"
     />
 
+    <link rel="stylesheet" href="/css/markdown.css" />
     <link rel="stylesheet" href="/css/styleBlog.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/vs2015.min.css"
+    />
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+      // Appeler Highlight.js après son chargement
+      hljs.highlightAll();
+    </script>
+
     <!-- Affiche l'image dans '<div class="div-banner" id="banner-edit">' de 'add-post.ejs'. -->
     <script type="text/javascript" defer src="/js/editor.js"></script>
     <script type="text/javascript" defer src="/js/preview.js"></script>
+
     <script type="module" src="/js/emoji.js"></script>
   </head>
   <body>
