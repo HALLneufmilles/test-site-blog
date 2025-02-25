@@ -24,7 +24,21 @@
 
 body {
   /* font-family: "Poppins", sans-serif; */
-  font-family: "Montserrat", sans-serif;
+  /* font-family: "Montserrat", sans-serif; */
+  /* font-family: "Segoe UI"; */
+  /* font-family: "Roboto"; */
+  font-family:
+    -system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    Segoe UI,
+    Roboto,
+    Helvetica Neue,
+    Arial,
+    sans-serif,
+    Apple Color Emoji,
+    Segoe UI Emoji,
+    Segoe UI Symbol;
   color: var(--black);
   font-size: var(--font-size-base);
   background-color: #151515;
@@ -228,27 +242,33 @@ button > svg {
   text-decoration: underline;
 }
 
-/* Author - HomePage */
-.author {
+/* introduction - HomePage */
+.intro {
   padding: 10px 0;
   text-align: center;
 }
 
-.author__heading {
+.intro p {
+  text-align: start;
+  margin: 0 1vw;
+}
+
+.intro__heading {
   margin-top: 10px;
   margin-bottom: 5px;
 }
 
-.author__body {
+.intro__body {
   font-size: var(--font-size-md);
   margin: 5px 0 40px 0;
 }
 
 /* Home Article List */
 .articles__heading {
-  margin-top: 4rem;
+  margin-top: 2rem;
   margin-left: 35px;
   font-weight: 600;
+  font-size: 1rem;
 }
 
 .article-ul {
@@ -488,14 +508,14 @@ button > svg {
   font-weight: 600;
 }
 
-.author__heading-2 {
+.intro__heading-2 {
   position: relative;
   margin-top: 30px;
   margin-bottom: 5px;
   font-size: 3rem;
 }
 
-.author__heading-2::before {
+.intro__heading-2::before {
   content: attr(data-text);
   position: absolute;
   top: 50%;
@@ -752,20 +772,32 @@ button > svg {
 }
 
 .blog {
-  width: 70%;
-  min-width: 400px;
+  min-width: 300px;
   height: 100px;
   display: block;
+  padding: 0 3px;
   margin: 0 auto;
-  padding: 8rem;
+  /* padding: 8rem; */
   box-sizing: border-box;
+}
+
+@media (min-width: 394px) {
+  .blog {
+    padding: 0 10px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .blog {
+    width: 70%;
+  }
 }
 
 .blog,
 .content {
   position: relative;
   height: fit-content;
-  padding: 20px;
+  /* padding: 1vw; */
 }
 
 .blog.title {
@@ -888,4 +920,33 @@ emoji-picker {
 /************************************/
 .btn-preview {
   background-color: #555;
+}
+/************************************/
+/* Author */
+/************************************/
+.author {
+  display: flex;
+  align-items: center;
+  margin-top: 100px;
+  flex-wrap: wrap;
+}
+
+.img-author {
+  width: 75px;
+  height: 75px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-right: 15px;
+}
+
+.img-author img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.author-name {
+  font-size: 1.2rem;
+  font-weight: bold;
 }
