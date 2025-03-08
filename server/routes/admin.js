@@ -3,6 +3,8 @@ const router = express.Router();
 import Post from "../models/Post.js";
 import User from "../models/User.js";
 import dotenv from "dotenv";
+// Importer la fonction de sociaux.js
+import { tweetArticleSummary } from "../helpers/sociaux.js";
 dotenv.config();
 // bcrypt est une bibliothèque utilisée pour sécuriser les mots de passe en les hachant avant de les stocker dans une base de données.
 // Les mots de passe ne doivent jamais être stockés en texte brut dans une base de données, car cela représente un énorme risque de sécurité si la base est compromise.
@@ -207,6 +209,18 @@ router.post("/add-post", authMiddleware, async (req, res) => {
     });
 
     await newPost.save();
+    console.log("newPost.save :", newPost);
+
+    const articleData = {
+      title: newPost.title,
+      description: newPost.description,
+      url: `https://mavitrineduweb.fr/blog/post/${newPost._id}`
+    };
+    console.log("articleData :", articleData);
+
+    // Publier sur Twitter (X)
+    // Appel à la fonction pour publier sur Twitter
+    await tweetArticleSummary(articleData);
 
     // 3) (Optionnel) PING Google pour signaler la mise à jour du sitemap
     try {
