@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (savedImage) {
       if (bannerDiv) {
         console.log("Restoring saved image in Base64:", savedImage);
-        bannerDiv.style.backgroundImage = `url("${savedImage}")`;
+        bannerDiv.style.backgroundImage = url("${savedImage}");
       }
     } else {
       console.log("No image found in sessionStorage to restore.");
@@ -50,7 +50,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   };
-
   restoreIllustrationImages(); // 🖼 images d’illustration
 
   // Écouteur pour la mise à jour de l'image
@@ -75,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
           // Mettre à jour l'image de la bannière
           if (bannerDiv) {
-            bannerDiv.style.backgroundImage = `url("${base64Image}")`;
+            bannerDiv.style.backgroundImage = url("${base64Image}");
           }
         };
         reader.readAsDataURL(file); // Convertir le fichier en Base64
@@ -84,41 +83,21 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Gestionnaire de soumission pour éviter de nettoyer sessionStorage lors de la prévisualisation
-  // const form = document.querySelector("form");
-  // if (form) {
-  //   form.addEventListener("submit", (event) => {
-  //     const previewButton = document.querySelector(".btn-preview");
-  //     if (event.submitter === previewButton) {
-  // ✅ Marque qu’on va faire un aperçu pour utilisation dans 'window.addEventListener("beforeunload"...'
-
-  // console.log(
-  //   "Preview button clicked, sessionStorage n'est pas nétoyé..."
-  // );
-  // Ne pas nettoyer `sessionStorage`
-  // return;
-  //     }
-
-  //     console.log("Form submitted, clearing sessionStorage...");
-  //     sessionStorage.removeItem("tempBannerImage");
-  //   });
-  // }
-
-  const previewButton = document.querySelector(".btn-preview");
   const form = document.querySelector("form");
+  if (form) {
+    form.addEventListener("submit", (event) => {
+      const previewButton = document.querySelector(".btn-preview");
+      if (event.submitter === previewButton) {
+        // ✅ Marque qu’on va faire un aperçu pour utilisation dans 'window.addEventListener("beforeunload"...'
 
-  if (previewButton) {
-    previewButton.addEventListener("click", (e) => {
-      e.preventDefault();
-
-      // 🔁 indique que l’utilisateur est en mode prévisualisation
-      sessionStorage.setItem("previewing", "true");
-
-      // 🔁 change temporairement l’action du formulaire
-      if (form) {
-        form.action = "/blog/preview-addpost";
-        form.method = "POST";
-        form.submit();
+        console.log(
+          "Preview button clicked, sessionStorage n'est pas nétoyé..."
+        );
+        return; // Ne pas nettoyer sessionStorage
       }
+
+      console.log("Form submitted, clearing sessionStorage...");
+      sessionStorage.removeItem("tempBannerImage");
     });
   }
 
@@ -138,6 +117,14 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   };
+
+  // Nettoyage au rafraîchissement de 'add-post.ejs'
+  // if (currentUrl.includes("add-post") && savedImage) {
+  //   console.log(
+  //     "Cleaning up sessionStorage and banner image on page refresh..."
+  //   );
+  //   cleanupBanner();
+  // }
 
   if (currentUrl.includes("dashboard")) {
     console.log(
@@ -169,7 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
             illustrationImageUrls[index] = fullUrl;
 
             // 1️⃣ Ajouter le fond d'image dans le label
-            uploadLabels[index].style.backgroundImage = `url("${fullUrl}")`;
+            uploadLabels[index].style.backgroundImage = url("${fullUrl}");
             deleteButtons[index].style.display = "block";
             deleteButtons[index].hidden = false;
 
@@ -179,7 +166,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // 3️⃣ Afficher l'image dans .product-image
             if (previewDiv) {
-              previewDiv.style.backgroundImage = `url("${fullUrl}")`;
+              previewDiv.style.backgroundImage = url("${fullUrl}");
             }
             // 4️⃣ Sauvegarde sessionStorage
             let savedList =
@@ -250,7 +237,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Si ce label est déjà actif, empêcher l'ouverture de l’explorateur
       if (this.classList.contains("active")) {
-        e.preventDefault(); // 🛑 Empêche l’ouverture
+        e.preventDefault(); //  Empêche l’ouverture
         return;
       }
 
@@ -265,25 +252,3 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 });
-
-// window.addEventListener("beforeunload", async (event) => {
-//   const submitted = sessionStorage.getItem("formSubmitted");
-//   const previewing = sessionStorage.getItem("previewing");
-
-//   // Si l'utilisateur quitte sans avoir soumis ou prévisualisé
-//   if (!submitted && !previewing) {
-//     const tempImages = JSON.parse(sessionStorage.getItem("tempImages") || "[]");
-//     if (tempImages.length > 0) {
-//       const blob = new Blob([JSON.stringify({ images: tempImages })], {
-//         type: "application/json"
-//       });
-//       navigator.sendBeacon("/blog/delete-temp-illustrations", blob);
-//       sessionStorage.removeItem("tempImages");
-//     }
-//     sessionStorage.removeItem("tempBannerImage");
-//   }
-
-//   // Nettoyer les flags dans tous les cas
-//   sessionStorage.removeItem("formSubmitted");
-//   sessionStorage.removeItem("previewing");
-// });

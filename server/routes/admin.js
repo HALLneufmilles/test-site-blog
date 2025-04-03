@@ -4,7 +4,7 @@ import Post from "../models/Post.js";
 import User from "../models/User.js";
 import dotenv from "dotenv";
 // Importer la fonction de sociaux.js
-import { tweetArticleSummary } from "../helpers/sociaux.js";
+// import { tweetArticleSummary } from "../helpers/sociaux.js";
 dotenv.config();
 // bcrypt est une bibliothèque utilisée pour sécuriser les mots de passe en les hachant avant de les stocker dans une base de données.
 // Les mots de passe ne doivent jamais être stockés en texte brut dans une base de données, car cela représente un énorme risque de sécurité si la base est compromise.
@@ -17,8 +17,12 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import fs from "fs/promises";
+import * as fsSync from "fs"; // pour existsSync
 
-import { processImage } from "../helpers/imageProcessor.js";
+import {
+  processImage,
+  processIllustrationImage
+} from "../helpers/imageProcessor.js";
 // dompurify pour nettoyer le HTML généréé par marked afin de supprimer tout contenu potentiellement dangereux (comme des balises <script> ou des événements JavaScript).
 import createDomPurify from "dompurify";
 import { JSDOM } from "jsdom";
@@ -72,6 +76,55 @@ const authMiddleware = (req, res, next) => {
     res.status(401).json({ message: "Unauthorized" });
   }
 };
+
+/**
+ * POST  Admin - Register
+ **/
+// *
+/* Pour rappel : 
+  1- Lorsque l'utilisateur ouvre une page du site, une requête est envoiyée au serve et session() de 'server.js' crée automatiquement une session avec 'saveUninitialized: true,' valable selon la durée définie également dans session() par 'cookie: {maxAge:36000}' .
+  2- l'ID de session est stocké côté client et server, mais les données utilisateur sont stockées uniquement côté serveur (apparement pas très bon pour la sécurité. risque de piratage du server.) */
+// On enregistre un nouvel utilisateur.
+// Ici l'utilisateur doit s'enregistrer. le formulaire envoi une requête POST '/register' que le server écoute avec 'router.post("/register", ...'. Le server récupère les données d'authentification, encode le password, puis crée un utilisateur dans la base de données. Comme pour "check Login 1" il s'agit d'une authentification stateful. L'ID de session est stocké côté client et server, mais les données utilisateur sont stockées uniquement côté serveur .
+// '/register' POST vient de 'admin/index.ejs'
+router.post("/register", async (req, res) => {
+  try {
+    // On récupère les informations d'inscription (username et password) que l'utilisateur a envoyées via le formulaire.
+    const { username, password } = req.body;
+    //bcrypt.hash(password, 10) utilise bcrypt pour transformer le mot de passe en une valeur hachée.
+    // 10 est le nombre de tours de salage. Plus ce nombre est élevé, plus le processus de hachage est sécurisé (et coûteux en termes de temps de calcul).
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    try {
+      // User est le modèle lié à la collection du même nom + "s", crée dans Mongodb par Mongoost dans 'User.js'.
+      // Donc ici on enregistre le username et le hashedPassword (mot de passe haché) dans la base de données.
+      const user = await User.create({ username, password: hashedPassword });
+      // Si l'utilisateur est créé avec succès, une réponse HTTP est envoyée par le seveur au navigateur avec le statut 201 (signifiant "Created"), et pour l'instant, un simple message JSON est renvoyé confirmant la création de l'utilisateur.
+      // Les statut HTTP sont ajoutés dans les en-têtes de la réponse HTTP.
+      res.status(201).json({ message: "User Created", user });
+    } catch (error) {
+      //  Ce code d'erreur 11000 est spécifique à MongoDB et indique une violation de la contrainte d'unicité (username déja utilisé).
+      if (error.code === 11000) {
+        // statut 409 indique un conflit avec username
+        res.status(409).json({ message: "User already in use" });
+      }
+      // indiquer une erreur interne au serveur. Cela signifie que quelque chose s'est mal passé côté serveur qui a empêché de répondre correctement.
+      res.status(500).json({ message: "Internal server error" });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+/**
+ * GET  Admin - Logout
+ **/
+// *
+router.get("/logout", (req, res) => {
+  res.clearCookie("token");
+  // res.json({ message: "Logout successful." });
+  res.redirect("/blog");
+});
 
 /**
  * GET  Admin - Login page
@@ -193,19 +246,71 @@ router.get("/add-post", authMiddleware, async (req, res) => {
  * POST  Admin - Create New Post with Image Upload
  **/
 
+// router.post("/add-post", authMiddleware, async (req, res) => {
+//   try {
+//     if (!req.files || !req.files.bannerImage) {
+//       return res.status(400).send("L'image est requise pour créer un post");
+//     }
+
+//     const bannerImages = await processImage(req.files.bannerImage);
+
+//     const newPost = new Post({
+//       title: req.body.title,
+//       description: req.body.description,
+//       body: req.body.body,
+//       bannerImages
+//     });
+
+//     await newPost.save();
+//     console.log("newPost.save :", newPost);
+
+//     const articleData = {
+//       title: newPost.title,
+//       description: newPost.description,
+//       url: https://mavitrineduweb.fr/blog/post/${newPost._id}
+//     };
+//     console.log("articleData :", articleData);
+
+// Publier sur Twitter (X)
+// Appel à la fonction pour publier sur Twitter
+// await tweetArticleSummary(articleData);
+
+// 3) (Optionnel) PING Google pour signaler la mise à jour du sitemap
+// try {
+//   const pingUrl =
+//     "https://www.google.com/ping?sitemap=https://mavitrineduweb.fr/sitemap.xml";
+//   await fetch(pingUrl);
+//   console.log("Ping Google Sitemap: succès !");
+// } catch (pingError) {
+//   console.error("Impossible de ping Google :", pingError);
+// }
+
+//     res.redirect("/blog/dashboard");
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).send("Erreur lors de la création du post");
+//   }
+// });
+
 router.post("/add-post", authMiddleware, async (req, res) => {
   try {
     if (!req.files || !req.files.bannerImage) {
-      return res.status(400).send("L'image est requise pour créer un post");
+      return res.status(400).send("L'image principale est requise.");
     }
 
     const bannerImages = await processImage(req.files.bannerImage);
+
+    // Récupérer les images d'illustration sauvegardées
+    const illustrationImages = req.body.illustrationImages
+      ? JSON.parse(req.body.illustrationImages)
+      : [];
 
     const newPost = new Post({
       title: req.body.title,
       description: req.body.description,
       body: req.body.body,
-      bannerImages
+      bannerImages,
+      illustrationImages
     });
 
     await newPost.save();
@@ -220,17 +325,17 @@ router.post("/add-post", authMiddleware, async (req, res) => {
 
     // Publier sur Twitter (X)
     // Appel à la fonction pour publier sur Twitter
-    await tweetArticleSummary(articleData);
+    // await tweetArticleSummary(articleData);
 
     // 3) (Optionnel) PING Google pour signaler la mise à jour du sitemap
-    try {
-      const pingUrl =
-        "https://www.google.com/ping?sitemap=https://mavitrineduweb.fr/sitemap.xml";
-      await fetch(pingUrl);
-      console.log("Ping Google Sitemap: succès !");
-    } catch (pingError) {
-      console.error("Impossible de ping Google :", pingError);
-    }
+    // try {
+    //   const pingUrl =
+    //     "https://www.google.com/ping?sitemap=https://mavitrineduweb.fr/sitemap.xml";
+    //   await fetch(pingUrl);
+    //   console.log("Ping Google Sitemap: succès !");
+    // } catch (pingError) {
+    //   console.error("Impossible de ping Google :", pingError);
+    // }
 
     res.redirect("/blog/dashboard");
   } catch (error) {
@@ -309,74 +414,6 @@ router.get("/edit-post/:id", authMiddleware, async (req, res) => {
  * PUT  Admin - Edit post
  **/
 // *
-// Modifier un post
-/* Part 10 du tuto, time 7.37
-https://chatgpt.com/share/673e1cd8-ea44-800d-b7e7-a84618775dac */
-/* findByIdAndUpdate est une méthode de Mongoose utilisée pour trouver un document dans la collection MongoDB par son identifiant unique (_id) et le mettre à jour avec les nouvelles données fournies. */
-
-/* router.put("/edit-post/:id", authMiddleware, async (req, res) => {
-  try {
-    // Récupérer le document existant
-    const post = await Post.findById(req.params.id);
-    console.log("post put(/edit-post/:id before :", post);
-
-    if (!post) {
-      return res.status(404).send("Post introuvable");
-    }
-
-    // Mettre à jour les champs
-    post.title = req.body.title;
-    post.description = req.body.description;
-    post.body = req.body.body;
-    post.updatedAt = Date.now();
-
-    // Vérifier si une nouvelle image a été envoyée
-    if (req.files && req.files.bannerImage) {
-      // capter les anciennes images si une nouvelle image est envoyée
-      const { ImgBase, ImgConvert, smallImgBase, smallImgConvert } =
-        post.bannerImages;
-
-      // Supprimer les anciennes images de /public/uploads/
-      const filesToDelete = [
-        ImgBase,
-        ImgConvert,
-        smallImgBase,
-        smallImgConvert
-      ].map((file) => path.join(process.cwd(), "public", file));
-      for (const filePath of filesToDelete) {
-        try {
-          await fs.unlink(filePath); // Supprimer le fichier
-          console.log(`Fichier supprimé : ${filePath}`);
-        } catch (err) {
-          console.error(
-            `Erreur lors de la suppression de ${filePath}:`,
-            err.message
-          );
-        }
-      }
-
-      const bannerImages = await processImage(req.files.bannerImage);
-      post.bannerImages = bannerImages;
-      // console.log("Une nouvelle image a été envoyée :", req.files.bannerImage);
-    } else {
-      console.log("Aucune image n'a été envoyée.");
-    }
-
-    // Appeler save() applique les middlewares de Post.js, y compris pre("validate")
-    await post.save();
-
-    // Redirection après mise à jour
-    res.redirect("/dashboard");
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Erreur lors de la mise à jour du post");
-  }
-}); */
-
-/**
- * PUT  Admin - Edit post
- **/
-// *
 // Modifier un post existant :
 /* Part 10 du tuto, time 7.37 */
 router.put("/edit-post/:id", authMiddleware, async (req, res) => {
@@ -415,63 +452,6 @@ router.put("/edit-post/:id", authMiddleware, async (req, res) => {
     res.status(500).send("Erreur lors de la mise à jour du post");
   }
 });
-
-/* router.put("/edit-post/:id", authMiddleware, async (req, res) => {
-  try {
-    const post = await Post.findById(req.params.id);
-    if (!post) {
-      return res.status(404).send("Post introuvable");
-    }
-
-    // Mise à jour des champs
-    post.title = req.body.title;
-    post.description = req.body.description;
-    post.body = req.body.body;
-    post.updatedAt = Date.now();
-
-    // Vérification de la nouvelle image
-    if (req.files && req.files.bannerImage) {
-      const { ImgBase, ImgConvert, smallImgBase, smallImgConvert } =
-        post.bannerImages;
-
-      const filesToDelete = [
-        ImgBase,
-        ImgConvert,
-        smallImgBase,
-        smallImgConvert
-      ].map((file) => path.join(process.cwd(), "public", file));
-
-      // Suppression des anciennes images
-      for (const filePath of filesToDelete) {
-        try {
-          await fs.access(filePath); // Vérifie si le fichier existe
-          console.log(`Tentative de suppression : ${filePath}`);
-
-          await fs.unlink(filePath); // Supprime le fichier
-          console.log(`Fichier supprimé : ${filePath}`);
-        } catch (err) {
-          if (err.code === "ENOENT") {
-            console.log(`Fichier introuvable, déjà supprimé : ${filePath}`);
-          } else {
-            console.error(`Erreur lors de la suppression : ${filePath}`, err);
-          }
-        }
-      }
-
-      // Traitement de la nouvelle image
-      const bannerImages = await processImage(req.files.bannerImage);
-      post.bannerImages = bannerImages;
-    } else {
-      console.log("Aucune image n'a été envoyée.");
-    }
-
-    await post.save(); // Sauvegarde les modifications
-    res.redirect("/blog/dashboard");
-  } catch (error) {
-    console.error("Erreur lors de la mise à jour du post :", error);
-    res.status(500).send("Erreur lors de la mise à jour du post");
-  }
-}); */
 
 /**
  * POST Admin - Preview Post
@@ -516,144 +496,6 @@ router.post("/preview-post/:id", authMiddleware, async (req, res) => {
   }
 });
 
-/* router.post("/preview-post/:id", authMiddleware, async (req, res) => {
-  try {
-    const locals = {
-      title: "Preview Post",
-      description: "Preview the post before updating."
-    };
-
-    // Récupérer le post existant pour obtenir les images actuelles
-    // const post = await Post.findById(req.body.postId);
-
-    const post = await Post.findById(req.params.id);
-    console.log("post :", post);
-
-    if (!post) {
-      return res.status(404).send("Post introuvable");
-    }
-
-    // Déterminer quelle image utiliser pour la prévisualisation
-    let bannerImage;
-    if (req.files?.bannerImage) {
-      console.log(
-        "Nouvelle image détectée pour la prévisualisation :",
-        req.files.bannerImage.name
-      );
-
-      // Créer un chemin vers le dossier uploads
-      const uploadsDir = path.join(process.cwd(), "public", "uploads");
-
-      // S'assurer que le dossier uploads existe
-      await fs.mkdir(uploadsDir, { recursive: true });
-
-      // Déplacer le fichier téléchargé dans le dossier uploads
-      const uploadPath = path.join(uploadsDir, req.files.bannerImage.name);
-      await req.files.bannerImage.mv(uploadPath);
-
-      // Utiliser ce chemin pour la prévisualisation
-      bannerImage = `/uploads/${req.files.bannerImage.name}`;
-    } else {
-      console.log(
-        "Utilisation de l'image existante dans 'post' pour la prévisualisation."
-      );
-
-      // Utiliser l'image existante
-      bannerImage = post.bannerImages.ImgBase;
-    }
-
-    // Récupérer les autres données pour la prévisualisation
-    const data = {
-      _id: req.params.id,
-      title: req.body.title,
-      description: req.body.description,
-      body: req.body.body,
-      // bannerImage,
-      createdAt: post.createdAt, // Conserver la date de création
-      sanitizedHtml: dompurify.sanitize(marked.parse(req.body.body))
-    };
-
-    // Rendre la vue de prévisualisation
-    res.render("admin/preview-post", {
-      locals,
-      data,
-      layout: adminLayout
-    });
-  } catch (error) {
-    console.error("Erreur lors de la prévisualisation du post :", error);
-    res.status(500).send("Erreur lors de la prévisualisation du post");
-  }
-}); */
-
-/* router.post("/preview-post", authMiddleware, async (req, res) => {
-  try {
-    const locals = {
-      title: "Preview Post",
-      description: "Preview the post before updating."
-    };
-    // console.log("req.files.bannerImage :", req.files.bannerImage);
-
-    // Récupérer les données soumises dans le formulaire
-    const data = {
-      title: req.body.title,
-      description: req.body.description,
-      body: req.body.body,
-      bannerImage: req.files?.bannerImage?.name || "/img/default-img.png",
-      createdAt: new Date(),
-      sanitizedHtml: dompurify.sanitize(marked.parse(req.body.body))
-    };
-    console.log("data :", data);
-
-    res.render("admin/preview-post", {
-      locals,
-      data,
-      layout: adminLayout
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(500).send("Erreur lors de la prévisualisation du post");
-  }
-}); */
-
-/**
- * POST  Admin - Register
- **/
-// *
-/* Pour rappel : 
-  1- Lorsque l'utilisateur ouvre une page du site, une requête est envoiyée au serve et session() de 'server.js' crée automatiquement une session avec 'saveUninitialized: true,' valable selon la durée définie également dans session() par 'cookie: {maxAge:36000}' .
-  2- l'ID de session est stocké côté client et server, mais les données utilisateur sont stockées uniquement côté serveur (apparement pas très bon pour la sécurité. risque de piratage du server.) */
-// On enregistre un nouvel utilisateur.
-// Ici l'utilisateur doit s'enregistrer. le formulaire envoi une requête POST '/register' que le server écoute avec 'router.post("/register", ...'. Le server récupère les données d'authentification, encode le password, puis crée un utilisateur dans la base de données. Comme pour "check Login 1" il s'agit d'une authentification stateful. L'ID de session est stocké côté client et server, mais les données utilisateur sont stockées uniquement côté serveur .
-// '/register' POST vient de 'admin/index.ejs'
-router.post("/register", async (req, res) => {
-  try {
-    // On récupère les informations d'inscription (username et password) que l'utilisateur a envoyées via le formulaire.
-    const { username, password } = req.body;
-    //bcrypt.hash(password, 10) utilise bcrypt pour transformer le mot de passe en une valeur hachée.
-    // 10 est le nombre de tours de salage. Plus ce nombre est élevé, plus le processus de hachage est sécurisé (et coûteux en termes de temps de calcul).
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    try {
-      // User est le modèle lié à la collection du même nom + "s", crée dans Mongodb par Mongoost dans 'User.js'.
-      // Donc ici on enregistre le username et le hashedPassword (mot de passe haché) dans la base de données.
-      const user = await User.create({ username, password: hashedPassword });
-      // Si l'utilisateur est créé avec succès, une réponse HTTP est envoyée par le seveur au navigateur avec le statut 201 (signifiant "Created"), et pour l'instant, un simple message JSON est renvoyé confirmant la création de l'utilisateur.
-      // Les statut HTTP sont ajoutés dans les en-têtes de la réponse HTTP.
-      res.status(201).json({ message: "User Created", user });
-    } catch (error) {
-      //  Ce code d'erreur 11000 est spécifique à MongoDB et indique une violation de la contrainte d'unicité (username déja utilisé).
-      if (error.code === 11000) {
-        // statut 409 indique un conflit avec username
-        res.status(409).json({ message: "User already in use" });
-      }
-      // indiquer une erreur interne au serveur. Cela signifie que quelque chose s'est mal passé côté serveur qui a empêché de répondre correctement.
-      res.status(500).json({ message: "Internal server error" });
-    }
-  } catch (error) {
-    console.log(error);
-  }
-});
-
 /**
  * DELETE  Admin - Delete Post
  **/
@@ -678,55 +520,77 @@ router.delete("/delete-post/:id", authMiddleware, async (req, res) => {
   }
 });
 
-/* router.delete("/delete-post/:id", authMiddleware, async (req, res) => {
+// Ajouter une image d'illustration
+router.post("/upload-illustration", authMiddleware, async (req, res) => {
   try {
-    // suppression des images du dossier "upload".
-    const post = await Post.findById(req.params.id);
-    if (!post) {
-      return res.status(404).send("Post introuvable");
+    if (!req.files || !req.files.image) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Aucune image fournie." });
     }
-    const { ImgBase, ImgConvert, smallImgBase, smallImgConvert } =
-      post.bannerImages;
 
-    const filesToDelete = [
-      ImgBase,
-      ImgConvert,
-      smallImgBase,
-      smallImgConvert
-    ].map((file) => path.join(process.cwd(), "public", file));
+    const imageUrl = await processIllustrationImage(req.files.image);
 
-    // Suppression des anciennes images
-    for (const filePath of filesToDelete) {
-      try {
-        await fs.access(filePath); // Vérifie si le fichier existe
-        console.log(`Tentative de suppression : ${filePath}`);
+    res.json({ success: true, imageUrl });
+  } catch (error) {
+    console.error("Erreur d'upload d'illustration :", error);
+    res.status(500).json({ success: false, message: "Erreur serveur." });
+  }
+});
 
-        await fs.unlink(filePath); // Supprime le fichier
-        console.log(`Fichier supprimé : ${filePath}`);
-      } catch (err) {
-        if (err.code === "ENOENT") {
-          console.log(`Fichier introuvable, déjà supprimé : ${filePath}`);
-        } else {
-          console.error(`Erreur lors de la suppression : ${filePath}`, err);
-        }
+// Effacer une image d'illusttration
+router.post("/delete-illustration", authMiddleware, async (req, res) => {
+  try {
+    const { imageUrl } = req.body;
+
+    if (!imageUrl) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Aucune image spécifiée." });
+    }
+
+    // Extraire le chemin relatif à partir de l'URL complète
+    const relativePath = new URL(imageUrl, `http://${req.headers.host}`)
+      .pathname;
+    const absolutePath = path.join(process.cwd(), "public", relativePath);
+
+    // Supprimer le fichier
+    await fs.unlink(absolutePath);
+    console.log(`Image supprimée : ${absolutePath}`);
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Erreur lors de la suppression de l'image :", error);
+    res.status(500).json({
+      success: false,
+      message: "Erreur lors de la suppression de l'image"
+    });
+  }
+});
+
+// Effacer toutes les images d'illustration
+router.post("/delete-temp-illustrations", authMiddleware, async (req, res) => {
+  try {
+    const { images } = req.body;
+    if (!images || !Array.isArray(images)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Données invalides" });
+    }
+
+    for (const url of images) {
+      const filename = path.basename(url);
+      const filePath = path.join(process.cwd(), "public/uploads", filename);
+
+      if (fsSync.existsSync(filePath)) {
+        await fs.unlink(filePath); // fs est déjà "fs/promises"
       }
     }
-    // suppression de l'article de la base de données.
-    await Post.deleteOne({ _id: req.params.id });
-    res.redirect("/blog/dashboard");
-  } catch (error) {
-    console.log(error);
-  }
-}); */
 
-/**
- * GET  Admin - Logout
- **/
-// *
-router.get("/logout", (req, res) => {
-  res.clearCookie("token");
-  // res.json({ message: "Logout successful." });
-  res.redirect("/blog");
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Erreur suppression automatique :", error);
+    res.status(500).json({ success: false, message: "Erreur serveur" });
+  }
 });
 
 export default router;

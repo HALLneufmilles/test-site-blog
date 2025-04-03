@@ -49,7 +49,8 @@ const PostSchema = new Schema({
   sanitizedHtml: {
     type: String,
     required: true
-  }
+  },
+  illustrationImages: [{ type: String }] // Stocke les URL des illustrations
 });
 
 // Middleware Mongoose avant validation pour transformer le Markdown en HTML sécurisé

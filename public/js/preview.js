@@ -18,24 +18,3 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 });
-
-/* document.addEventListener("DOMContentLoaded", function () {
-  // Vérifie si une image temporaire est disponible
-  const tempBannerImage = sessionStorage.getItem("tempBannerImage");
-
-  const defaultBannerImage = "<%= data.bannerImage %>";
-
-  // Met à jour les images dynamiquement
-  const imgBanner = document.getElementById("img-banner");
-  const imgCard = document.getElementById("img-card");
-
-  if (tempBannerImage) {
-    console.log("Using tempBannerImage:", tempBannerImage);
-    if (imgBanner) imgBanner.src = tempBannerImage;
-    if (imgCard) imgCard.src = tempBannerImage;
-  } else {
-    console.log("Using default image from server:", "<%= data.bannerImage %>");
-    if (imgBanner) imgBanner.src = defaultBannerImage;
-    if (imgCard) imgCard.src = defaultBannerImage;
-  }
-}); */
